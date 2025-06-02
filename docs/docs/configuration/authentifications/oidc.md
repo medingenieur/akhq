@@ -13,7 +13,12 @@ micronaut:
           client-secret: "<client-secret>"
           openid:
             issuer: "<issuer-url>"
+  caches:
+    local-security-claim-provider:
+      expire-after-write: 600s # Default. May be overridden.
 ```
+
+OIDC responses will be cached according to the settings under `micronaut.caches.local-security-claim-provider`.
 
 To further tell AKHQ to display OIDC options on the login page and customize claim mapping, configure OIDC in the AKHQ config:
 
