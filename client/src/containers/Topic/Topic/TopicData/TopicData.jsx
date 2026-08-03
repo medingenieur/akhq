@@ -13,6 +13,7 @@ import {
   uriTopicsPartitions
 } from '../../../../utils/endpoints';
 import Pagination from '../../../../components/Pagination/Pagination';
+import PageSize from '../../../../components/PageSize';
 import DatePicker from '../../../../components/DatePicker';
 import camelCase from 'lodash/camelCase';
 import constants, { SETTINGS_VALUES } from '../../../../utils/constants';
@@ -81,6 +82,7 @@ class TopicData extends Root {
     loading: true,
     canDownload: false,
     dateTimeFormat: constants.SETTINGS_VALUES.TOPIC_DATA.DATE_TIME_FORMAT.RELATIVE,
+    size: 50,
     checkboxes: {},
     messagesToExport: []
   };
@@ -160,7 +162,12 @@ class TopicData extends Root {
         dateTimeFormat:
           uiOptions && uiOptions.topicData && uiOptions.topicData.dateTimeFormat
             ? uiOptions.topicData.dateTimeFormat
-            : prevState.dateTimeFormat
+            : prevState.dateTimeFormat,
+        size: query.get('size')
+          ? parseInt(query.get('size'))
+          : uiOptions && uiOptions.topicData && uiOptions.topicData.size
+            ? uiOptions.topicData.size
+            : prevState.size
       }),
       () => {
         this._loadFromCurrentLocation(query);
@@ -312,13 +319,14 @@ class TopicData extends Root {
   }
 
   _buildFilters() {
-    const { sortBy, partition, datetime, endDatetime, offsetsSearch, search } = this.state;
+    const { sortBy, partition, datetime, endDatetime, offsetsSearch, search, size } = this.state;
 
     const filters = [];
 
     if (sortBy) filters.push(`sort=${sortBy}`);
     if (offsetsSearch) filters.push(`after=${offsetsSearch}`);
     if (partition) filters.push(`partition=${partition}`);
+    if (size) filters.push(`size=${size}`);
 
     if (datetime) {
       filters.push(`timestamp=${encodeURIComponent(this._buildTimestampFilter(datetime))}`);
@@ -338,6 +346,12 @@ class TopicData extends Root {
         );
       });
     return filters.join('&');
+  }
+
+  async _handlePageSizeChange(newSize) {
+    this.setState({ size: newSize, nextPage: '' }, () => {
+      this._navigateWithCurrentFilters(false);
+    });
   }
 
   _buildTimestampFilter(datetime) {
@@ -948,7 +962,8 @@ class TopicData extends Root {
       canDownload,
       percent,
       loading,
-      roles
+      roles,
+      size
     } = this.state;
 
     let actions = [constants.TABLE_SHARE, constants.TABLE_COPY];
@@ -985,6 +1000,10 @@ class TopicData extends Root {
 
           <nav className="pagination-data">
             <div>
+              <PageSize
+                  currentPageSize={size}
+                  onChange={value => this._handlePageSizeChange(value)}
+              />
               <Pagination
                 pageNumber={pageNumber}
                 totalRecords={recordCount}
